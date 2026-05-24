@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Анимированный Премиум Калькулятор</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #090a10;
+            padding: 16px;
+            overflow: hidden;
+        }
+
+        /* Мягкое неоновое свечение на заднем плане */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .calculator {
+            position: relative;
+            z-index: 1;
+            background: #111322;
+            width: 100%;
+            max-width: 360px;
+            padding: 20px;
+            border-radius: 28px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .display {
+            width: 100%;
+            height: 110px;
+            background: #0c0d16;
+            border-radius: 18px;
+            margin-bottom: 20px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-end;
+            border: 1px solid rgba(255, 255, 255, 0.01);
+        }
+
+        #history {
+            color: #4b4e6d;
+            font-size: 0.95rem;
+            min-height: 20px;
+            transition: all 0.2s ease;
+        }
+
+        #result {
+            color: #ffffff;
+            font-size: 2.6rem;
+            font-weight: 300;
+            margin-top: 4px;
+            text-align: right;
+            transition: transform 0.1s ease, opacity 0.1s ease;
+        }
+
+        /* Класс для анимации вспышки цифр при нажатии */
+        .flash {
+            animation: textUpdate 0.15s ease-out;
+        }
+
+        @keyframes textUpdate {
+            0% { opacity: 0.4; transform: scale(0.98); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        /* Кнопки-дивизионы с поддержкой аппаратного ускорения */
+        .btn {
+            height: 68px;
+            border-radius: 18px;
+            background: #1b1e33;
+            color: #ffffff;
+            font-size: 1.4rem;
+            font-weight: 500;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transform: scale(1);
+            transition: transform 0.1s cubic-bezier(0.25, 1, 0.5, 1), background 0.15s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        /* Эффект глубокого 3D-прожатия при таче */
+        .btn:active {
+            transform: scale(0.9);
+            background: #232742;
+        }
+
+        .btn-c, .btn-back { 
+            color: #f65a5a; 
+            background: rgba(246, 90, 90, 0.04);
+        }
+        .btn-c:active, .btn-back:active {
+            background: rgba(246, 90, 90, 0.15);
+        }
+
+        .btn-op { 
+            color: #737bfa; 
+            background: rgba(115, 123, 250, 0.04);
+        }
+        .btn-op:active {
+            background: rgba(115, 123, 250, 0.18);
+        }
+        
+        /* Плавный градиент для кнопки "=" */
+        .btn-eq {
+            grid-column: span 2;
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: white;
+            box-shadow: 0 6px 15px rgba(99, 102, 241, 0.25);
+        }
+        .btn-eq:active {
+            transform: scale(0.93) !important;
+            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%) !important;
+            box-shadow: 0 2px 5px rgba(99, 102, 241, 0.2);
+        }
+
+        .span-2 {
+            grid-column: span 2;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+        <div class="display">
+            <div id="history"></div>
+            <div id="result">0</div>
+        </div>
+        
+        <div class="grid">
+            <div class="btn btn-c" data-action="clear">C</div>
+            <div class="btn btn-back" data-action="back">⌫</div>
+            <div class="btn btn-op" data-action="op" data-val="/">/</div>
+            <div class="btn btn-op" data-action="op" data-val="*">×</div>
+            
+            <div class="btn" data-action="num" data-val="7">7</div>
+            <div class="btn" data-action="num" data-val="8">8</div>
+            <div class="btn" data-action="num" data-val="9">9</div>
+            <div class="btn" data-action="op" data-val="-">−</div>
+            
+            <div class="btn" data-action="num" data-val="4">4</div>
+            <div class="btn" data-action="num" data-val="5">5</div>
+            <div class="btn" data-action="num" data-val="6">6</div>
+            <div class="btn" data-action="op" data-val="+">+</div>
+            
+            <div class="btn" data-action="num" data-val="1">1</div>
+            <div class="btn" data-action="num" data-val="2">2</div>
+            <div class="btn" data-action="num" data-val="3">3</div>
+            <div class="btn span-2" data-action="num" data-val="0">0</div>
+            
+            <div class="btn btn-eq" data-action="calc">=</div>
+            <div class="btn" data-action="num" data-val=".">.</div>
+        </div>
+    </div>
+
+    <script>
+        const resultDiv = document.getElementById('result');
+        const historyDiv = document.getElementById('history');
+        let shouldReset = false;
+
+        // Анимация обновления экрана
+        function animateScreen() {
+            resultDiv.classList.remove('flash');
+            void resultDiv.offsetWidth; // Хак для сброса CSS-анимации
+            resultDiv.add('flash'); // Исправлено на classList.add ниже в логике
+        }
+
+        function handleInput(action, val) {
+            // Триггер анимации текста
+            resultDiv.classList.remove('flash');
+            void resultDiv.offsetWidth;
+            resultDiv.classList.add('flash');
+
+            if (action === 'num') {
+                if (resultDiv.textContent === '0' && val !== '.') {
+                    resultDiv.textContent = val;
+                } else if (shouldReset) {
+                    resultDiv.textContent = val === '.' ? '0.' : val;
+                    shouldReset = false;
+                } else {
+                    if (val === '.' && resultDiv.textContent.split(/[\+\-\*\/]/).pop().includes('.')) return;
+                    resultDiv.textContent += val;
+                }
+            }
+            
+            if (action === 'op') {
+                shouldReset = false;
+                let lastChar = resultDiv.textContent.slice(-1);
+                if (['+', '-', '*', '/'].includes(lastChar)) {
+                    resultDiv.textContent = resultDiv.textContent.slice(0, -1) + val;
+                } else {
+                    resultDiv.textContent += val;
+                }
+            }
+            
+            if (action === 'clear') {
+                resultDiv.textContent = '0';
+                historyDiv.textContent = '';
+            }
+            
+            if (action === 'back') {
+                if (resultDiv.textContent.length > 1) {
+                    resultDiv.textContent = resultDiv.textContent.slice(0, -1);
+                } else {
+                    resultDiv.textContent = '0';
+                }
+            }
+            
+            if (action === 'calc') {
+                try {
+                    let expr = resultDiv.textContent;
+                    if (['+', '-', '*', '/'].includes(expr.slice(-1))) expr = expr.slice(0, -1);
+                    
+                    historyDiv.textContent = expr + ' =';
+                    let res = new Function(`return (${expr})`)();
+                    
+                    if (res === Infinity || isNaN(res)) {
+                        resultDiv.textContent = 'Ошибка';
+                    } else {
+                        resultDiv.textContent = Number(res.toFixed(8)).toString();
+                    }
+                    shouldReset = true;
+                } catch {
+                    resultDiv.textContent = 'Ошибка';
+                    shouldReset = true;
+                }
+            }
+        }
+
+        // Обработка тапов с блокировкой лишних задержек мобильных браузеров
+        document.querySelectorAll('.btn').forEach(button => {
+            const eventType = 'ontouchstart' in window ? 'touchstart' : 'mousedown';
+            
+            button.addEventListener(eventType, function(e) {
+                e.preventDefault();
+                const action = this.getAttribute('data-action');
+                const val = this.getAttribute('data-val');
+                handleInput(action, val);
+            });
+        });
+    </script>
+</body>
+</html>
+
